@@ -2,6 +2,9 @@
 
 #include "PlayerPaddle.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "ScoreHandler.h"
+#include "Ball.h"
+
 
 // Sets default values
 APlayerPaddle::APlayerPaddle()
@@ -16,6 +19,7 @@ void APlayerPaddle::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	PlayerIndex = UScoreHandler::AddPlayer();
 }
 
 // Called every frame
@@ -23,6 +27,8 @@ void APlayerPaddle::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if(!bIsPlayerRotating)
+		Rotation = FMath::FInterpConstantTo(Rotation, 0, DeltaTime, 20);
 }
 
 // Called to bind functionality to input
@@ -35,16 +41,36 @@ void APlayerPaddle::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	this->InputComponent->BindAction("Swing", EInputEvent::IE_Pressed, this, &APlayerPaddle::Swing);
 }
 
-void APlayerPaddle::MoveRight(float axis)
+void APlayerPaddle::MoveRight(float Axis)
 {
-	this->AddMovementInput(this->GetActorRightVector(), axis * 100);
+	if(bCanSwing)
+		this->AddMovementInput(this->GetActorRightVector(), Axis * 100);
 }
 
-void APlayerPaddle::Rotate(float direction)
+void APlayerPaddle::Rotate(float Direction)
 {
-	if (Rotation + direction >= -30 && Rotation + direction <= 30)
+	if (Direction == 0)
+		bIsPlayerRotating = false;
+	else
+		bIsPlayerRotating = true;
+
+	if (Rotation + Direction >= -25 && Rotation + Direction <= 25)
 	{
-		Rotation += direction;
-		GetMesh()->SetRelativeRotation(FRotator(0, -90 + Rotation, 0));
+		Rotation += Direction;
 	}
+}
+
+void APlayerPaddle::StrikeBall_Implementation(ABall* Ball)
+{
+	Ball->bHitWall = false;
+
+	FVector Direction = GetActorForwardVector().RotateAngleAxis(Rotation, FVector(0, 0, 1));
+	Ball->LaunchBall(Direction);
+
+	Ball->SetLastPlayerHit(this->PlayerIndex);
+
+	SetPaddleState(false);
+
+	UScoreHandler::AddScore(PlayerIndex, 1);
+	Ball->launchvelocity += 50;
 }

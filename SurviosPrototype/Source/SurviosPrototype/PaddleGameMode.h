@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "PlayerPaddle.h"
 #include "PaddleGameMode.generated.h"
 
 /**
@@ -17,6 +18,12 @@ class SURVIOSPROTOTYPE_API APaddleGameMode : public AGameModeBase
 public:
 	APaddleGameMode();
 
-	void BeginPlay() override;
+	virtual void BeginPlay() override;
+
+	TSubclassOf<APlayerPaddle> PlayerClass;
+
+	int BallCount = 0;
 	
+	UFUNCTION(BlueprintCallable, Category = GameMode)
+	virtual void SpawnBall() {};
 };
